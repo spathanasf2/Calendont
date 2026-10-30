@@ -69,7 +69,10 @@ export function renderMonth(ctx) {
   let timer;
   const settle = () => {
     clearTimeout(timer);
-    if (touching) return;
+    // A tap re-renders the view before the lifted finger's timer fires; this
+    // scroller is then detached, reads every offset as 0 and would "settle"
+    // on the first month it rendered.
+    if (touching || !scroller.isConnected) return;
     const top = scroller.scrollTop;
     let best = null;
     for (const row of scroller.querySelectorAll('.week.snap')) {
