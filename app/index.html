@@ -15,7 +15,21 @@
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/themes.css">
+  <link rel="preload" href="fonts/JetBrainsMono-Regular-latin.woff2" as="font" type="font/woff2" crossorigin>
   <title>Calendont</title>
+  <script>
+    // Paint the saved theme before anything renders (app.js keeps this in sync).
+    (function () {
+      var root = document.documentElement;
+      var look = null;
+      try { look = JSON.parse(localStorage.getItem('calendont:look')); } catch (e) { /* first visit */ }
+      look = look || { skin: 'terminal', tty: true };
+      root.setAttribute('data-skin', look.skin);
+      root.setAttribute('data-mode', look.mode || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+      if (look.tty) root.setAttribute('data-tty', '');
+    })();
+  </script>
   <script type="module" src="js/app.js"></script>
 </head>
 <body>
@@ -26,7 +40,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
         <button type="button" class="title" data-action="jump" aria-label="Jump to a date">
-          <span id="title-main">Calendont</span> <span id="title-sub"></span>
+          <span class="prompt" aria-hidden="true"></span><span id="title-main">Calendont</span> <span id="title-sub"></span><span class="cursor" aria-hidden="true"></span>
         </button>
         <button type="button" class="icon-btn" data-action="next" aria-label="Next">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
@@ -39,6 +53,7 @@
           <button type="button" data-view="day" aria-pressed="false">Day</button>
           <button type="button" data-view="week" aria-pressed="false">Week</button>
           <button type="button" data-view="month" aria-pressed="false">Month</button>
+          <button type="button" data-view="year" aria-pressed="false">Year</button>
           <button type="button" data-view="list" aria-pressed="false">List</button>
         </div>
         <button type="button" class="icon-btn wide-only" data-action="settings" aria-label="Settings">
@@ -58,6 +73,7 @@
         <button type="button" data-view="day" aria-pressed="false">Day</button>
         <button type="button" data-view="week" aria-pressed="false">Week</button>
         <button type="button" data-view="month" aria-pressed="false">Month</button>
+        <button type="button" data-view="year" aria-pressed="false">Year</button>
         <button type="button" data-view="list" aria-pressed="false">List</button>
       </div>
       <button type="button" class="icon-btn" data-action="settings" aria-label="Settings">

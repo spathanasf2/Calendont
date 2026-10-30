@@ -1,6 +1,6 @@
 // The settings sheet: calendars, backups, preferences, about.
 
-import { ACCENTS, CALENDAR_COLORS, newId } from './model.js';
+import { ACCENTS, CALENDAR_COLORS, SKINS, newId } from './model.js';
 import * as f from './format.js';
 import { h, icon, openSheet, choose } from './ui.js';
 import { backUp, exportICS, chooseAndImport } from './transfer.js';
@@ -12,6 +12,7 @@ export function openSettings(ctx) {
   const body = h('div', { class: 'settings' });
   const fill = () => body.replaceChildren(
     calendarsGroup(ctx),
+    lookGroup(ctx),
     backupGroup(ctx),
     preferencesGroup(ctx),
     aboutGroup(ctx),
@@ -126,33 +127,67 @@ function preferencesGroup(ctx) {
     return h('label', { class: 'field' }, h('span', { class: 'field-label' }, label), el);
   };
 
-  const accents = h('div', { class: 'field' },
-    h('span', { class: 'field-label' }, 'Accent'),
-    h('span', { class: 'accents' }, ACCENTS.map((a) => h('button', {
-      type: 'button',
-      class: `swatch${a.value === s.accent ? ' on' : ''}`,
-      style: { '--c': a.value },
-      'aria-label': a.name,
-      title: a.name,
-      onClick: (e) => {
-        ctx.saveSettings({ accent: a.value });
-        e.currentTarget.parentElement.querySelectorAll('.swatch').forEach((b) => b.classList.toggle('on', b === e.currentTarget));
-      },
-    }))));
-
   return section('Preferences', [
     select('Week starts on', 'weekStart', [[0, 'Sunday'], [1, 'Monday'], [6, 'Saturday']], Number),
     select('Time format', 'timeFormat', [['auto', 'Automatic'], ['12', '12-hour'], ['24', '24-hour']]),
-    select('Appearance', 'theme', [['system', 'Match system'], ['light', 'Light'], ['dark', 'Dark']]),
-    accents,
     select('Default length', 'defaultDuration', [[15, '15 minutes'], [30, '30 minutes'], [45, '45 minutes'], [60, '1 hour'], [90, '1½ hours'], [120, '2 hours']], Number),
     select('New events go to', 'defaultCalendarId', ctx.calendars.map((c) => [c.id, c.name]), (v) => v, ctx.calendar(s.defaultCalendarId) ? undefined : ctx.calendars[0]?.id),
   ]);
 }
 
+function lookGroup(ctx) {
+  const s = ctx.settings;
+  const skin = SKINS.find((k) => k.id === s.skin) ?? SKINS[0];
+  const save = async (patch) => {
+    await ctx.saveSettings(patch);
+    ctx.onDataChange?.();
+  };
+
+  const tiles = h('div', { class: 'skins', role: 'radiogroup', 'aria-label': 'Theme' },
+    SKINS.map((k) => h('button', {
+      type: 'button',
+      class: `skin-tile skin-${k.id}`,
+      role: 'radio',
+      'aria-checked': String(k.id === skin.id),
+      style: { '--p-bg': k.preview.bg, '--p-fg': k.preview.fg, '--p-accent': k.preview.accent, '--p-alt': k.preview.alt ?? k.preview.bg },
+      onClick: () => save({ skin: k.id }),
+    },
+    h('span', { class: 'skin-sample', 'aria-hidden': 'true' },
+      h('span', { class: 'skin-num' }, '30'),
+      h('span', { class: 'skin-lines' }, h('i'), h('i'), h('i'))),
+    h('span', { class: 'skin-name' }, k.name, k.modes === 'dark' ? h('small', null, ' dark') : null))));
+
+  const appearance = h('select', { class: 'plain-select', 'aria-label': 'Appearance', onChange: () => save({ theme: appearance.value }) },
+    [['system', 'Match system'], ['light', 'Light'], ['dark', 'Dark']].map(([v, t]) => h('option', { value: v }, t)));
+  appearance.value = s.theme;
+
+  const accents = h('span', { class: 'accents' },
+    h('button', {
+      type: 'button',
+      class: `swatch auto${s.accent ? '' : ' on'}`,
+      'aria-label': 'Theme accent',
+      title: 'The theme’s own accent',
+      onClick: () => save({ accent: null }),
+    }),
+    ACCENTS.map((a) => h('button', {
+      type: 'button',
+      class: `swatch${a.value === s.accent ? ' on' : ''}`,
+      style: { '--c': a.value },
+      'aria-label': a.name,
+      title: a.name,
+      onClick: () => save({ accent: a.value }),
+    })));
+
+  return section('Look', [
+    h('div', { class: 'field skins-field' }, tiles),
+    skin.modes === 'dark' ? null : h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Appearance'), appearance),
+    h('div', { class: 'field' }, h('span', { class: 'field-label' }, 'Accent'), accents),
+  ]);
+}
+
 function aboutGroup(ctx) {
   const shortcuts = [
-    ['←  →', 'Previous / next'], ['T', 'Today'], ['D  W  M  L', 'Day, week, month, list'],
+    ['←  →', 'Previous / next'], ['T', 'Today'], ['D W M Y L', 'Day, week, month, year, list'],
     ['N', 'New event'], ['/', 'Search'], [',', 'Settings'],
   ];
   return h('div', null,

@@ -1,0 +1,349 @@
+/* Calendont themes. Each theme sets the tokens declared in app.css, on <html>:
+     data-skin   which theme          (classic, terminal, rose, phosphor, amber, synthwave)
+     data-mode   light or dark        (dark-only themes always get dark)
+     data-tty    terminal-style chrome: prompt, block cursor, square everything
+   Terminal, Phosphor, Amber and Synthwave borrow their palettes from cli-games. */
+
+/* ------------------------------------------------------------- classic */
+
+:root[data-mode="dark"] {
+  color-scheme: dark;
+  --danger: #ff6369;
+  --warn: #ffb224;
+  --bg: #0d0d0f;
+  --sheet: #1c1c1e;
+  --surface: #2c2c2e;
+  --raised: #2c2c2e;
+  --seg-on-bg: #636366;
+  --seg-on-fg: #f5f5f7;
+  --fill: rgba(118, 118, 128, 0.24);
+  --fill-strong: rgba(118, 118, 128, 0.36);
+  --weekend: rgba(118, 118, 128, 0.06);
+  --text: #f5f5f7;
+  --text-2: #98989f;
+  --text-3: #5d5d63;
+  --line: rgba(84, 84, 88, 0.42);
+  --line-strong: rgba(120, 120, 128, 0.6);
+  --toast-bg: #f5f5f7;
+  --toast-fg: #1d1d1f;
+  --tint: 30%;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.6), 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------------------------------------------------- terminal family */
+
+:root[data-tty] {
+  --ui-font: var(--mono);
+  --display-font: var(--mono);
+  --ui-size: 14px;
+  --title-size: 22px;
+  --title-spacing: -0.03em;
+  --title-transform: lowercase;
+  --r-sheet: 0;
+  --r-group: 0;
+  --r-btn: 0;
+  --r-pill: 0;
+  --r-seg: 0;
+  --r-seg-inner: 0;
+  --r-input: 0;
+  --r-chip: 0;
+  --r-event: 0;
+  --r-mark: 0;
+  --r-dot: 1px;
+  --r-knob: 0;
+  --shadow-sm: none;
+}
+
+/* Terminal by day: cli-games "Paper". */
+:root[data-skin="terminal"] {
+  color-scheme: light;
+  --accent-theme: #006d77;
+  --on-accent: #f4f1e8;
+  --danger: #b42318;
+  --warn: #8a5a00;
+  --bg: #f4f1e8;
+  --sheet: #ebe7da;
+  --surface: #f9f7f1;
+  --raised: #f9f7f1;
+  --seg-on-bg: #2d302b;
+  --seg-on-fg: #f4f1e8;
+  --fill: rgba(45, 48, 43, 0.07);
+  --fill-strong: rgba(45, 48, 43, 0.15);
+  --weekend: rgba(45, 48, 43, 0.035);
+  --text: #2d302b;
+  --text-2: #6f7069;
+  --text-3: #a3a296;
+  --line: rgba(45, 48, 43, 0.17);
+  --line-strong: rgba(45, 48, 43, 0.38);
+  --toast-bg: #2d302b;
+  --toast-fg: #f4f1e8;
+  --tint: 16%;
+  --shadow-lg: 0 0 0 1px var(--line-strong), 6px 6px 0 rgba(45, 48, 43, 0.14);
+  --topbar-rule: linear-gradient(90deg, #0969da80, #1b7c8380, #1a7f3780, #9a670080, #8250df80);
+}
+
+/* Terminal by night: cli-games "Midnight". */
+:root[data-skin="terminal"][data-mode="dark"] {
+  color-scheme: dark;
+  --accent-theme: #58a6ff;
+  --on-accent: #0d1117;
+  --danger: #f85149;
+  --warn: #d29922;
+  --bg: #0d1117;
+  --sheet: #161b22;
+  --surface: #0d1117;
+  --raised: #161b22;
+  --seg-on-bg: #c9d1d9;
+  --seg-on-fg: #0d1117;
+  --fill: rgba(201, 209, 217, 0.07);
+  --fill-strong: rgba(201, 209, 217, 0.15);
+  --weekend: rgba(201, 209, 217, 0.025);
+  --text: #c9d1d9;
+  --text-2: #8b949e;
+  --text-3: #484f58;
+  --line: #30363d;
+  --line-strong: #6e7681;
+  --toast-bg: #c9d1d9;
+  --toast-fg: #0d1117;
+  --tint: 20%;
+  --shadow-lg: 0 0 0 1px var(--line-strong), 8px 8px 0 rgba(0, 0, 0, 0.45);
+  --topbar-rule: linear-gradient(90deg, #58a6ff80, #39c5cf80, #3fb95080, #d2992280, #bc8cff80);
+}
+
+/* Green phosphor CRT. */
+:root[data-skin="phosphor"] {
+  color-scheme: dark;
+  --accent-theme: #33ff33;
+  --on-accent: #001a00;
+  --danger: #f9fff8;
+  --warn: #b8ff9f;
+  --bg: #001a00;
+  --sheet: #002300;
+  --surface: #001d00;
+  --raised: #002300;
+  --seg-on-bg: #33ff33;
+  --seg-on-fg: #001a00;
+  --fill: rgba(51, 255, 51, 0.08);
+  --fill-strong: rgba(51, 255, 51, 0.17);
+  --weekend: rgba(51, 255, 51, 0.025);
+  --text: #33ff33;
+  --text-2: #22c022;
+  --text-3: #2c7f28;
+  --line: #185216;
+  --line-strong: #2a8926;
+  --toast-bg: #33ff33;
+  --toast-fg: #001a00;
+  --tint: 22%;
+  --c-strength: 28%;
+  --glow: 0 0 1px rgba(51, 255, 51, 0.55), 0 0 7px rgba(51, 255, 51, 0.3);
+  --shadow-lg: 0 0 0 1px var(--line-strong), 0 0 28px rgba(51, 255, 51, 0.14);
+  --topbar-rule: #2a8926;
+}
+
+/* Amber phosphor CRT. */
+:root[data-skin="amber"] {
+  color-scheme: dark;
+  --accent-theme: #ffb000;
+  --on-accent: #1f1200;
+  --danger: #fed89b;
+  --warn: #fed89b;
+  --bg: #1f1200;
+  --sheet: #281800;
+  --surface: #231400;
+  --raised: #281800;
+  --seg-on-bg: #ffb000;
+  --seg-on-fg: #1f1200;
+  --fill: rgba(255, 176, 0, 0.08);
+  --fill-strong: rgba(255, 176, 0, 0.17);
+  --weekend: rgba(255, 176, 0, 0.025);
+  --text: #ffb000;
+  --text-2: #cc8f10;
+  --text-3: #8d672a;
+  --line: #5c4117;
+  --line-strong: #966c28;
+  --toast-bg: #ffb000;
+  --toast-fg: #1f1200;
+  --tint: 22%;
+  --c-strength: 28%;
+  --glow: 0 0 1px rgba(255, 176, 0, 0.55), 0 0 7px rgba(255, 176, 0, 0.28);
+  --shadow-lg: 0 0 0 1px var(--line-strong), 0 0 28px rgba(255, 176, 0, 0.12);
+  --topbar-rule: #966c28;
+}
+
+/* The prompt and cursor around the title: "~$ october 2026█". */
+:root[data-tty] .prompt { display: inline; margin-right: 0.55ch; color: var(--accent); font-weight: 400; }
+:root[data-tty] .prompt::before { content: "you@calendont:~$"; }
+:root[data-tty] .cursor {
+  display: inline-block;
+  width: 0.58em;
+  height: 0.95em;
+  margin-left: 0.12em;
+  vertical-align: -0.1em;
+  background: var(--text);
+  box-shadow: var(--glow);
+  animation: cursor-blink 1s step-end infinite;
+}
+@keyframes cursor-blink { 50% { opacity: 0; } }
+
+:root[data-tty] .sheet-title { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+:root[data-tty] .sheet-head {
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, var(--line-strong), transparent) 1;
+  padding-bottom: 12px;
+}
+:root[data-tty] .sheet, :root[data-tty] .prompt-card, :root[data-tty] .prompt-btn.cancel { border: 1px solid var(--line-strong); }
+:root[data-tty] .group { box-shadow: inset 0 0 0 1px var(--line); }
+:root[data-tty] .group-title { text-transform: lowercase; }
+:root[data-tty] .group-title::before { content: "# "; color: var(--text-3); }
+:root[data-tty] .add-btn { font-weight: 700; }
+:root[data-tty] .pill-btn { box-shadow: inset 0 0 0 1px var(--line-strong); background: none; }
+:root[data-tty] .segmented { box-shadow: inset 0 0 0 1px var(--line-strong); background: none; padding: 0; gap: 0; }
+:root[data-tty] .segmented button { text-transform: lowercase; }
+:root[data-tty] .tg-event { border-left-width: 2px; }
+:root[data-tty] .month-tag::before { content: "/"; opacity: 0.6; }
+:root[data-tty] .switch::after { box-shadow: none; }
+
+/* CRT glass: scanlines and a vignette over everything but sheets. */
+:root[data-skin="phosphor"] body::after,
+:root[data-skin="amber"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.13) 0, rgba(0, 0, 0, 0.13) 1px, transparent 1px, transparent 3px),
+    radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.3) 100%);
+}
+:root[data-skin="phosphor"] .switch::after,
+:root[data-skin="amber"] .switch::after { background: var(--bg); }
+
+/* -------------------------------------------------------------- synthwave */
+
+:root[data-skin="synthwave"] {
+  color-scheme: dark;
+  --display-font: var(--sans);
+  --title-size: 20px;
+  --title-weight: 800;
+  --title-spacing: 0.16em;
+  --title-transform: uppercase;
+  --title-glow: 0 0 2px #001716, 0 0 3px #03edf975, 0 0 5px #03edf975, 0 0 8px #03edf975;
+  --accent-theme: #f92aad;
+  --on-accent: #ffffff;
+  --danger: #fe4450;
+  --warn: #fede5d;
+  --bg: #241b2f;
+  --sheet: #2a2139;
+  --surface: #34294f;
+  --raised: #34294f;
+  --seg-on-bg: #f92aad;
+  --seg-on-fg: #ffffff;
+  --fill: rgba(144, 124, 193, 0.16);
+  --fill-strong: rgba(144, 124, 193, 0.3);
+  --weekend: rgba(144, 124, 193, 0.05);
+  --text: #f1eff8;
+  --text-2: #b9b2d9;
+  --text-3: #6d5f97;
+  --line: rgba(73, 84, 149, 0.55);
+  --line-strong: #907cc1;
+  --toast-bg: #f1eff8;
+  --toast-fg: #241b2f;
+  --tint: 28%;
+  --shadow-sm: 0 0 10px rgba(249, 42, 173, 0.35);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 26px rgba(249, 42, 173, 0.2);
+  --topbar-rule: linear-gradient(90deg, #f92aad, #ff8b39, #fede5d, #03edf9);
+  --topbar-rule-height: 2px;
+}
+:root[data-skin="synthwave"] .day.today .num,
+:root[data-skin="synthwave"] .tg-dayhead.today .num,
+:root[data-skin="synthwave"] .yday.today,
+:root[data-skin="synthwave"] .add-btn { box-shadow: 0 0 18px #fc28a880; }
+:root[data-skin="synthwave"] .ymonth-title,
+:root[data-skin="synthwave"] .sheet-title { letter-spacing: 0.12em; text-transform: uppercase; text-shadow: var(--title-glow); }
+:root[data-skin="synthwave"] #title-sub { color: #03edf9; }
+:root[data-skin="synthwave"] .now-line { box-shadow: 0 0 8px var(--accent); }
+
+/* ------------------------------------------------------------------- rosé */
+
+/* Rosé Pine Dawn by day. */
+:root[data-skin="rose"] {
+  color-scheme: light;
+  --display-font: var(--serif);
+  --title-size: 28px;
+  --title-weight: 600;
+  --title-style: italic;
+  --title-spacing: -0.01em;
+  --r-sheet: 24px;
+  --r-group: 18px;
+  --r-btn: 14px;
+  --r-seg: 14px;
+  --r-seg-inner: 11px;
+  --r-input: 12px;
+  --r-chip: 8px;
+  --r-event: 10px;
+  --accent-theme: #d7827e;
+  --on-accent: #fffaf3;
+  --danger: #b4637a;
+  --warn: #c58325;
+  --bg: #faf4ed;
+  --sheet: #f2e9e1;
+  --surface: #fffaf3;
+  --raised: #fffaf3;
+  --seg-on-bg: #fffaf3;
+  --seg-on-fg: #575279;
+  --fill: rgba(87, 82, 121, 0.07);
+  --fill-strong: rgba(87, 82, 121, 0.14);
+  --weekend: rgba(87, 82, 121, 0.03);
+  --text: #575279;
+  --text-2: #797593;
+  --text-3: #a8a3b8;
+  --line: rgba(87, 82, 121, 0.12);
+  --line-strong: rgba(87, 82, 121, 0.3);
+  --toast-bg: #575279;
+  --toast-fg: #faf4ed;
+  --tint: 18%;
+  --shadow-sm: 0 1px 3px rgba(87, 82, 121, 0.12);
+  --shadow-lg: 0 30px 70px rgba(87, 82, 121, 0.2), 0 2px 10px rgba(87, 82, 121, 0.08);
+}
+
+/* Rosé Pine by night. */
+:root[data-skin="rose"][data-mode="dark"] {
+  color-scheme: dark;
+  --accent-theme: #ebbcba;
+  --on-accent: #191724;
+  --danger: #eb6f92;
+  --warn: #f6c177;
+  --bg: #191724;
+  --sheet: #1f1d2e;
+  --surface: #26233a;
+  --raised: #26233a;
+  --seg-on-bg: #403d52;
+  --seg-on-fg: #e0def4;
+  --fill: rgba(224, 222, 244, 0.07);
+  --fill-strong: rgba(224, 222, 244, 0.14);
+  --weekend: rgba(224, 222, 244, 0.025);
+  --text: #e0def4;
+  --text-2: #908caa;
+  --text-3: #6e6a86;
+  --line: rgba(110, 106, 134, 0.32);
+  --line-strong: #6e6a86;
+  --toast-bg: #e0def4;
+  --toast-fg: #191724;
+  --tint: 26%;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 30px 70px rgba(0, 0, 0, 0.55);
+}
+:root[data-skin="rose"] .ymonth-title,
+:root[data-skin="rose"] .sheet-title,
+:root[data-skin="rose"] .day-list-title,
+:root[data-skin="rose"] .strip-label { font-family: var(--serif); font-style: italic; }
+
+/* ------------------------------------------------------------- phones */
+
+@media (max-width: 720px) {
+  :root[data-tty] { --title-size: 18px; }
+  :root[data-tty] .prompt::before { content: "~$"; }
+  :root[data-skin="synthwave"] { --title-size: 17px; --title-spacing: 0.1em; }
+  :root[data-skin="rose"] { --title-size: 24px; }
+}

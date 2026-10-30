@@ -20,6 +20,11 @@ rules for changing it.
 - **Data shapes live in `app/js/model.js`.** Everything read from storage or a file passes
   through its `clean*` functions. If you change a shape, keep reading the old one, and bump
   `BACKUP_VERSION` in `app/js/backup.js` only if older apps couldn't ignore the change.
+- **Themes are tokens.** `app/css/app.css` only reads custom properties; `app/css/themes.css`
+  sets them per `data-skin` / `data-mode` / `data-tty` on `<html>`. The theme list (ids, which
+  follow light/dark, picker colours) is `SKINS` in `app/js/model.js`, and the inline script in
+  `app/index.html` repeats the default so the first paint matches. New visual rules should use
+  tokens rather than hard-coded colours, radii or fonts.
 - **All writes go through `ctx.commit()`** in `app/js/app.js`, which handles undo, persistence
   and other open tabs.
 

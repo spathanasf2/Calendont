@@ -4,9 +4,13 @@
 // tells browsers there is an update.
 
 // <stamp>
-const VERSION = 'eff0530d4f2e';
+const VERSION = '81ed6828a295';
 const ASSETS = [
   './css/app.css',
+  './css/themes.css',
+  './fonts/JetBrainsMono-Bold-latin.woff2',
+  './fonts/JetBrainsMono-Regular-latin.woff2',
+  './fonts/OFL.txt',
   './icons/apple-touch-icon.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -29,6 +33,7 @@ const ASSETS = [
   './js/views/list.js',
   './js/views/month.js',
   './js/views/timegrid.js',
+  './js/views/year.js',
   './manifest.webmanifest',
 ];
 // </stamp>

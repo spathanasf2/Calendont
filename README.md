@@ -2,13 +2,14 @@
 
 A bloat-free calendar that doesn't invade your privacy or sell you features. Yes it's vibe coded.
 
-![Calendont month view on desktop, and on a phone in dark mode](docs/screenshot.png)
+![Calendont in the Terminal theme on desktop, and on phones in Terminal, Phosphor and Synthwave](docs/screenshot.png)
 
 - **Private by construction.** No accounts, no servers, no analytics. Your events live in your browser's storage on your device and nowhere else.
 - **Installs like an app.** Add it to your iPhone or Android home screen, or install it from Chrome or Edge on a computer. It works offline.
 - **One file to back up.** Everything (calendars, events, settings) saves to a single readable `.json` file. Restore it on any device.
 - **Speaks .ics.** Import from Apple Calendar, Google Calendar or Outlook. Export a calendar, or send a single event to someone.
-- **The calendar basics, done well.** Day, week, month and list views. All-day and multi-day events. Repeats (daily, weekdays, weekly on chosen days, monthly by date or by "last Friday", yearly), with "this event only" and "this and future" edits. Several colour-coded calendars. Search. Light and dark. Undo.
+- **Six looks.** Terminal (the default: JetBrains Mono, a blinking prompt, cli-games' Paper and Midnight palettes), green and amber Phosphor CRTs, Synthwave, Rosé and Classic. Pick an accent of your own, or keep the theme's.
+- **The calendar basics, done well.** Day, week, month, year and list views. Month scrolls vertically and snaps to each month: drag a little to peek at the next one, let go and it springs back. The year view doubles as a heatmap of how busy each day is. All-day and multi-day events. Repeats (daily, weekdays, weekly on chosen days, monthly by date or by "last Friday", yearly), with "this event only" and "this and future" edits. Several colour-coded calendars. Search. Light and dark. Undo.
 - **No dependencies.** Plain HTML, CSS and JavaScript. Nothing to install, nothing to rot.
 
 ## Use it
@@ -57,16 +58,18 @@ Re-importing the same `.ics` into the same calendar updates the events it brough
 
 ## Keyboard shortcuts
 
-`←` `→` previous/next · `T` today · `D` `W` `M` `L` day, week, month, list · `N` new event · `/` search · `,` settings · double-click a day to add an event there
+`←` `→` previous/next · `T` today · `D` `W` `M` `Y` `L` day, week, month, year, list · `N` new event · `/` search · `,` settings · double-click a day to add an event there
 
 ## Development
 
 ```
 app/            the whole app — this folder is what gets served
   index.html
-  css/app.css
+  css/app.css   layout and components, all driven by tokens
+  css/themes.css  the themes: token values per theme and light/dark mode
+  fonts/        JetBrains Mono (SIL Open Font License, see fonts/OFL.txt)
   js/app.js     state, storage and wiring
-  js/views/     month, week/day time grid, list
+  js/views/     month, week/day time grid, year, list
   js/…          editor, settings, import/export, recurrence, dates
   sw.js         offline cache (its asset list is generated)
 scripts/        serve.js (local server), stamp.js (refreshes sw.js)

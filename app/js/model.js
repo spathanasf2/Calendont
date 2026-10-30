@@ -35,7 +35,21 @@ export const ACCENTS = [
   { name: 'Graphite', value: '#6f6f78' },
 ];
 
-export const VIEWS = ['day', 'week', 'month', 'list'];
+/**
+ * Themes. `modes` says whether a theme follows light/dark or is always dark;
+ * `tty` turns on terminal chrome. `preview` colours the picker swatch.
+ * Their styles live in css/themes.css.
+ */
+export const SKINS = [
+  { id: 'terminal', name: 'Terminal', modes: 'both', tty: true, preview: { bg: '#0d1117', fg: '#c9d1d9', accent: '#58a6ff', alt: '#f4f1e8' } },
+  { id: 'phosphor', name: 'Phosphor', modes: 'dark', tty: true, preview: { bg: '#001a00', fg: '#33ff33', accent: '#33ff33' } },
+  { id: 'amber', name: 'Amber', modes: 'dark', tty: true, preview: { bg: '#1f1200', fg: '#ffb000', accent: '#ffb000' } },
+  { id: 'synthwave', name: 'Synthwave', modes: 'dark', tty: false, preview: { bg: '#241b2f', fg: '#f1eff8', accent: '#f92aad' } },
+  { id: 'rose', name: 'Rosé', modes: 'both', tty: false, preview: { bg: '#faf4ed', fg: '#575279', accent: '#d7827e', alt: '#191724' } },
+  { id: 'classic', name: 'Classic', modes: 'both', tty: false, preview: { bg: '#ffffff', fg: '#1d1d1f', accent: '#e5484d', alt: '#0d0d0f' } },
+];
+
+export const VIEWS = ['day', 'week', 'month', 'year', 'list'];
 export const FREQS = ['daily', 'weekly', 'monthly', 'yearly'];
 
 export function defaultWeekStart(locale) {
@@ -51,7 +65,8 @@ export function defaultSettings(locale = 'en-US') {
     weekStart: defaultWeekStart(locale),
     timeFormat: 'auto',
     theme: 'system',
-    accent: ACCENTS[0].value,
+    skin: SKINS[0].id,
+    accent: null, // null: the theme's own accent
     defaultDuration: 60,
     view: 'month',
     defaultCalendarId: null,
@@ -140,7 +155,9 @@ export function cleanSettings(raw, locale) {
     weekStart: [0, 1, 6].includes(raw.weekStart) ? raw.weekStart : base.weekStart,
     timeFormat: ['auto', '12', '24'].includes(raw.timeFormat) ? raw.timeFormat : base.timeFormat,
     theme: ['system', 'light', 'dark'].includes(raw.theme) ? raw.theme : base.theme,
-    accent: HEX_RE.test(raw.accent) ? raw.accent.toLowerCase() : base.accent,
+    skin: SKINS.some((k) => k.id === raw.skin) ? raw.skin : base.skin,
+    // Before themes, every install stored the default coral; let themes choose instead.
+    accent: raw.skin !== undefined && HEX_RE.test(raw.accent) ? raw.accent.toLowerCase() : null,
     defaultDuration: clampInt(raw.defaultDuration, 5, 24 * 60) ?? base.defaultDuration,
     view: VIEWS.includes(raw.view) ? raw.view : base.view,
     defaultCalendarId: typeof raw.defaultCalendarId === 'string' ? raw.defaultCalendarId : null,

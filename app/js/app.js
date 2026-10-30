@@ -4,7 +4,7 @@ import {
   addDays, addMinutes, addMonths, startOfDay, startOfWeek, sameDay, dateKey, parseDate,
   nowWall, todayKey, minuteOfDay,
 } from './dates.js';
-import { cleanCalendar, cleanEvent, cleanSettings, defaultSettings, draftEvent, newId } from './model.js';
+import { cleanCalendar, cleanEvent, cleanSettings, defaultSettings, draftEvent, newId, SKINS } from './model.js';
 import { occurrences } from './recurrence.js';
 import { openStore, requestPersistence } from './store.js';
 import * as f from './format.js';
@@ -12,6 +12,7 @@ import { toast, sheetOpen, closeSheet } from './ui.js';
 import { renderMonth } from './views/month.js';
 import { renderTimeGrid } from './views/timegrid.js';
 import { renderList } from './views/list.js';
+import { renderYear } from './views/year.js';
 import { openEditor } from './editor.js';
 import { openSettings } from './settings.js';
 import { importFile } from './transfer.js';
@@ -24,6 +25,7 @@ const VIEWS = {
   day: (c) => renderTimeGrid(c, 1),
   week: (c) => renderTimeGrid(c, 7),
   month: renderMonth,
+  year: renderYear,
   list: renderList,
 };
 
@@ -61,6 +63,7 @@ const ctx = {
   expand,
   select,
   setView,
+  showMonth,
   newEvent,
   openOccurrence: (occurrence) => openEditor(ctx, { occurrence }),
   commit,
@@ -217,8 +220,18 @@ function setView(view) {
 function navigate(dir) {
   const c = state.cursor;
   if (state.view === 'list') return;
-  state.cursor = state.view === 'month' ? addMonths(c, dir) : addDays(c, state.view === 'week' ? 7 * dir : dir);
+  // The month view scrolls to its neighbour itself, then settles via showMonth.
+  if (state.view === 'month' && $('#view').firstElementChild?.page?.(dir)) return;
+  const step = { day: () => addDays(c, dir), week: () => addDays(c, 7 * dir), month: () => addMonths(c, dir), year: () => addMonths(c, 12 * dir) };
+  state.cursor = step[state.view]();
   render(dir > 0 ? 'next' : 'prev');
+}
+
+/** Lands on a month: today if it's in that month, otherwise the 1st. */
+function showMonth(first) {
+  const now = startOfDay(nowWall());
+  state.cursor = dateKey(now).slice(0, 7) === dateKey(first).slice(0, 7) ? now : startOfDay(first);
+  render();
 }
 
 function goToday() {
@@ -247,10 +260,19 @@ function newEvent({ day, start } = {}) {
 function applySettings() {
   const s = state.settings;
   f.setTimeFormat(s.timeFormat);
+  const skin = SKINS.find((k) => k.id === s.skin) ?? SKINS[0];
+  const systemDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const mode = skin.modes === 'dark' ? 'dark' : s.theme === 'system' ? (systemDark ? 'dark' : 'light') : s.theme;
   const root = document.documentElement;
-  if (s.theme === 'system') delete root.dataset.theme;
-  else root.dataset.theme = s.theme;
-  root.style.setProperty('--accent', s.accent);
+  root.dataset.skin = skin.id;
+  root.dataset.mode = mode;
+  root.toggleAttribute('data-tty', skin.tty);
+  if (s.accent) root.style.setProperty('--accent-user', s.accent);
+  else root.style.removeProperty('--accent-user');
+  // The inline script in index.html reads this to paint the right theme on launch.
+  try {
+    localStorage.setItem('calendont:look', JSON.stringify({ skin: skin.id, mode, tty: skin.tty }));
+  } catch { /* storage blocked: the default theme flashes first, nothing worse */ }
   const bg = getComputedStyle(document.body).backgroundColor;
   document.querySelectorAll('meta[name="theme-color"]').forEach((m) => { m.content = bg; });
 }
@@ -264,6 +286,9 @@ function updateHeader() {
     const e = addDays(s, 6);
     if (s.getUTCMonth() !== e.getUTCMonth()) main = `${f.monthShort(s)} – ${f.monthShort(e)}`;
     sub = f.year(e);
+  } else if (state.view === 'year') {
+    main = f.year(c);
+    sub = '';
   } else if (state.view === 'list') {
     main = 'Upcoming';
     sub = '';
@@ -312,7 +337,7 @@ function bindChrome() {
     if (e.target.closest('input, textarea, select')) return;
     const keys = {
       ArrowLeft: () => navigate(-1), ArrowRight: () => navigate(1), j: () => navigate(1), k: () => navigate(-1),
-      t: goToday, d: () => setView('day'), w: () => setView('week'), m: () => setView('month'), l: () => setView('list'),
+      t: goToday, d: () => setView('day'), w: () => setView('week'), m: () => setView('month'), y: () => setView('year'), l: () => setView('list'),
       n: () => newEvent(), ',': () => openSettings(ctx),
       '/': () => { setView('list'); $('.search-input')?.focus(); },
     };
