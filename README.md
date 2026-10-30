@@ -8,7 +8,7 @@ A bloat-free calendar that doesn't invade your privacy or sell you features. Yes
 - **Installs like an app.** Add it to your iPhone or Android home screen, or install it from Chrome or Edge on a computer. It works offline.
 - **One file to back up.** Everything (calendars, events, settings) saves to a single readable `.json` file. Restore it on any device.
 - **Speaks .ics.** Import from Apple Calendar, Google Calendar or Outlook. Export a calendar, or send a single event to someone.
-- **Six looks.** Terminal (the default: JetBrains Mono, a blinking prompt, cli-games' Paper and Midnight palettes), green and amber Phosphor CRTs, Synthwave, Rosé and Classic. Pick an accent of your own, or keep the theme's.
+- **Six looks.** Terminal (the default: JetBrains Mono, a shell-prompt title, cli-games' Paper and Midnight palettes), green and amber Phosphor CRTs, Synthwave, Rosé and Classic. Pick an accent of your own, or keep the theme's.
 - **The calendar basics, done well.** Day, week, month, year and list views. Month scrolls vertically and snaps to each month: drag a little to peek at the next one, let go and it springs back. The year view doubles as a heatmap of how busy each day is. All-day and multi-day events. Repeats (daily, weekdays, weekly on chosen days, monthly by date or by "last Friday", yearly), with "this event only" and "this and future" edits. Several colour-coded calendars. Search. Light and dark. Undo.
 - **No dependencies.** Plain HTML, CSS and JavaScript. Nothing to install, nothing to rot.
 

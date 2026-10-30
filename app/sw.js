@@ -4,7 +4,7 @@
 // tells browsers there is an update.
 
 // <stamp>
-const VERSION = '81ed6828a295';
+const VERSION = '9dddac62c68e';
 const ASSETS = [
   './css/app.css',
   './css/themes.css',

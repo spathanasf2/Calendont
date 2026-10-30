@@ -1,7 +1,7 @@
 /* Calendont themes. Each theme sets the tokens declared in app.css, on <html>:
      data-skin   which theme          (classic, terminal, rose, phosphor, amber, synthwave)
      data-mode   light or dark        (dark-only themes always get dark)
-     data-tty    terminal-style chrome: prompt, block cursor, square everything
+     data-tty    terminal-style chrome: prompt, monospace, square everything
    Terminal, Phosphor, Amber and Synthwave borrow their palettes from cli-games. */
 
 /* ------------------------------------------------------------- classic */
@@ -171,20 +171,9 @@
   --topbar-rule: #966c28;
 }
 
-/* The prompt and cursor around the title: "~$ october 2026█". */
+/* The prompt before the title: "~$ october 2026". */
 :root[data-tty] .prompt { display: inline; margin-right: 0.55ch; color: var(--accent); font-weight: 400; }
 :root[data-tty] .prompt::before { content: "you@calendont:~$"; }
-:root[data-tty] .cursor {
-  display: inline-block;
-  width: 0.58em;
-  height: 0.95em;
-  margin-left: 0.12em;
-  vertical-align: -0.1em;
-  background: var(--text);
-  box-shadow: var(--glow);
-  animation: cursor-blink 1s step-end infinite;
-}
-@keyframes cursor-blink { 50% { opacity: 0; } }
 
 :root[data-tty] .sheet-title { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
 :root[data-tty] .sheet-head {

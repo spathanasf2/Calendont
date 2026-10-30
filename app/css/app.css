@@ -168,7 +168,7 @@ a { color: var(--accent); }
   text-overflow: ellipsis;
 }
 #title-sub { font-weight: 400; font-style: normal; color: var(--text-2); }
-.prompt, .cursor { display: none; }
+.prompt { display: none; }
 
 .tools { display: flex; align-items: center; gap: 10px; flex: none; }
 
