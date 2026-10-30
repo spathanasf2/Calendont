@@ -1,0 +1,16 @@
+{
+  "name": "calendont",
+  "version": "0.1.0",
+  "description": "A bloat-free calendar that doesn't invade your privacy or sell you features.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node scripts/serve.js",
+    "stamp": "node scripts/stamp.js",
+    "test": "node --test"
+  }
+}
