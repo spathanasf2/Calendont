@@ -130,6 +130,11 @@ function dayCell(ctx, day, occs, { outside, today, selected, compact, maxChips }
       else ctx.select(day);
     },
     onDblclick: () => ctx.newEvent({ day }),
+    onKeydown: (e) => {
+      if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
+      e.preventDefault();
+      e.currentTarget.click();
+    },
   },
   day.getUTCDate() === 1 ? h('span', { class: 'month-tag' }, f.monthShort(day)) : null,
   h('span', { class: 'num' }, f.dayNumber(day)),

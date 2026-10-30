@@ -28,6 +28,14 @@ test('rejects files that are not backups, or from the future', () => {
   assert.throws(() => readBackup('{"format":"calendont-backup","version":99}'), /newer version/);
 });
 
+test('an exportedAt that is not a date is dropped rather than shown', () => {
+  const read = (exportedAt) => readBackup(JSON.stringify({ format: 'calendont-backup', version: 1, exportedAt })).exportedAt;
+  assert.equal(read('Oct 1 2026'), null);
+  assert.equal(read('2026-02-30T10:00:00.000Z'), null);
+  assert.equal(read(42), null);
+  assert.equal(read('2026-10-01T10:00:00.000Z'), '2026-10-01T10:00:00.000Z');
+});
+
 test('drops broken entries and rehomes orphaned events', () => {
   const text = JSON.stringify({
     format: 'calendont-backup',

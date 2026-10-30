@@ -126,6 +126,8 @@ a { color: var(--accent); }
   height: 100dvh;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  /* Never wider than the screen: a long title ("September 2026") ellipsizes instead. */
+  grid-template-columns: minmax(0, 1fr);
   padding: calc(env(safe-area-inset-top) + var(--top-gap)) env(safe-area-inset-right) 0 env(safe-area-inset-left);
 }
 

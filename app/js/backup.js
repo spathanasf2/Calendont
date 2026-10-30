@@ -4,6 +4,7 @@
 // reading every older version.
 
 import { cleanCalendar, cleanEvent, cleanSettings, newId, CALENDAR_COLORS } from './model.js';
+import { isDateKey } from './dates.js';
 
 export const BACKUP_FORMAT = 'calendont-backup';
 export const BACKUP_VERSION = 1;
@@ -59,7 +60,8 @@ export function readBackup(text, locale) {
   }
 
   return {
-    exportedAt: typeof data.exportedAt === 'string' ? data.exportedAt : null,
+    // Shown as a date, so anything that doesn't start with one is dropped.
+    exportedAt: typeof data.exportedAt === 'string' && isDateKey(data.exportedAt.slice(0, 10)) ? data.exportedAt : null,
     settings: cleanSettings(data.settings, locale),
     calendars,
     events,

@@ -108,7 +108,7 @@ function readEvent(props, timeZone) {
   const now = new Date().toISOString();
   const event = {
     id,
-    uid: get('UID')?.value.trim() || `${id}@calendont`,
+    uid: unescapeText(get('UID')?.value ?? '').trim() || `${id}@calendont`,
     calendarId: '',
     title: unescapeText(get('SUMMARY')?.value ?? '').trim(),
     location: unescapeText(get('LOCATION')?.value ?? '').trim(),
@@ -166,7 +166,9 @@ function parseRule(value, dtstart, timeZone) {
   let simplified = Object.keys(parts).some((k) => !supported.has(k));
 
   if (parts.UNTIL) {
-    const until = parseDateValue({ name: 'UNTIL', params: {}, value: parts.UNTIL }, timeZone);
+    // An all-day series ends on a date; some apps still write it as midnight UTC.
+    const value = dtstart.allDay ? parts.UNTIL.slice(0, 8) : parts.UNTIL;
+    const until = parseDateValue({ name: 'UNTIL', params: {}, value }, timeZone);
     if (until) {
       let last = until.wall;
       // An UNTIL earlier in the day than the event's start excludes that day.
@@ -185,7 +187,9 @@ function parseRule(value, dtstart, timeZone) {
     });
     if (days.some((d) => !d)) simplified = true;
     const plain = days.filter(Boolean);
-    if ((freq === 'weekly' || freq === 'daily') && plain.every((d) => d.nth === 0)) {
+    if (!plain.length) {
+      // Nothing readable: keep the frequency, on the start's own day.
+    } else if ((freq === 'weekly' || freq === 'daily') && plain.every((d) => d.nth === 0)) {
       // "Every weekday" arrives as FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR.
       if (freq === 'daily' && rule.interval !== 1) simplified = true;
       rule.freq = 'weekly';

@@ -42,7 +42,7 @@ class IDBStore {
 
   /**
    * Applies a batch atomically. Any of: putEvents, deleteEvents (ids),
-   * putCalendars, deleteCalendars (ids), settings, lastBackup, clear (wipe first).
+   * putCalendars, deleteCalendars (ids), settings, lastBackup (null forgets it), clear (wipe first).
    */
   write(change) {
     return new Promise((resolve, reject) => {
@@ -60,6 +60,7 @@ class IDBStore {
       change.deleteEvents?.forEach((id) => events.delete(id));
       if (change.settings) meta.put(change.settings, 'settings');
       if (change.lastBackup) meta.put(change.lastBackup, 'lastBackup');
+      else if (change.lastBackup === null) meta.delete('lastBackup');
       t.oncomplete = () => resolve();
       t.onerror = t.onabort = () => reject(t.error ?? new Error('Saving failed.'));
     });
@@ -86,7 +87,7 @@ class MemoryStore {
     change.putEvents?.forEach((e) => events.set(e.id, e));
     change.deleteEvents?.forEach((id) => events.delete(id));
     if (change.settings) this.data.settings = change.settings;
-    if (change.lastBackup) this.data.lastBackup = change.lastBackup;
+    if (change.lastBackup !== undefined) this.data.lastBackup = change.lastBackup;
   }
 }
 

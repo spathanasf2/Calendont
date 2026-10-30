@@ -3,7 +3,7 @@
 import { todayKey, parseDate } from './dates.js';
 import { createBackup, readBackup } from './backup.js';
 import { parseICS, serializeICS } from './ics.js';
-import { newId, CALENDAR_COLORS } from './model.js';
+import { newId, cleanEvent, CALENDAR_COLORS } from './model.js';
 import * as f from './format.js';
 import { choose, toast, saveFile, pickFile, slug } from './ui.js';
 
@@ -100,7 +100,7 @@ async function importCalendarFile(ctx, text, fileName) {
   const existing = new Map(ctx.events.filter((e) => e.calendarId === calendarId).map((e) => [e.uid, e]));
   const putEvents = parsed.events.map((e) => {
     const match = existing.get(e.uid);
-    return { ...e, calendarId, id: match?.id ?? e.id, created: match?.created ?? e.created };
-  });
+    return cleanEvent({ ...e, calendarId, id: match?.id ?? e.id, created: match?.created ?? e.created });
+  }).filter(Boolean);
   await ctx.commit({ putCalendars, putEvents }, { message: `Imported ${plural(putEvents.length, 'event')}`, undo: true });
 }

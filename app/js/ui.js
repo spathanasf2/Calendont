@@ -94,6 +94,7 @@ export function openSheet({ title, body, action, onClose, isDirty, wide = false 
 
 function closeSheetNow() {
   const dialog = sheetEl();
+  releaseToast(dialog);
   if (dialog.open) dialog.close();
   dialog.replaceChildren();
   activeSheet = null;
@@ -107,6 +108,7 @@ export function choose({ title, message, options, cancel = 'Cancel' }) {
   const dialog = document.getElementById('prompt');
   return new Promise((resolve) => {
     const done = (value) => {
+      releaseToast(dialog);
       dialog.close();
       dialog.replaceChildren();
       resolve(value);
@@ -133,9 +135,28 @@ export function choose({ title, message, options, cancel = 'Cancel' }) {
 // Toasts
 
 let toastTimer;
+let toastNode;
+const toastEl = () => (toastNode ??= document.getElementById('toast'));
+
+/** An open sheet makes everything outside it inert, so the toast lives in the topmost one. */
+function toastHost(except) {
+  return [...document.querySelectorAll('dialog[open]')].filter((d) => d !== except).at(-1) ?? document.body;
+}
+
+/** Moves the toast out of a sheet that is closing, so it outlives it. */
+function releaseToast(dialog) {
+  const el = toastEl();
+  if (!el || !dialog.contains(el)) return;
+  toastHost(dialog).append(el); // moving it closes the popover
+  if (el.classList.contains('show')) {
+    try {
+      el.showPopover?.();
+    } catch { /* popover unsupported */ }
+  }
+}
 
 export function toast(message, { actionLabel, onAction, timeout = 4500 } = {}) {
-  const el = document.getElementById('toast');
+  const el = toastEl();
   clearTimeout(toastTimer);
   const hide = () => {
     el.classList.remove('show');
@@ -145,6 +166,8 @@ export function toast(message, { actionLabel, onAction, timeout = 4500 } = {}) {
     h('span', null, message),
     actionLabel && h('button', { type: 'button', class: 'toast-action', onClick: () => { hide(); onAction(); } }, actionLabel),
   );
+  const host = toastHost();
+  if (el.parentElement !== host) host.append(el);
   // As a popover the toast joins the top layer, above any open sheet.
   if (el.showPopover) {
     try {

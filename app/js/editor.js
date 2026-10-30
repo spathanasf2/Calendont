@@ -4,7 +4,7 @@ import {
   addDays, addMinutes, parseDate, parseWhen, dateKey, timeKey, diffDays, diffMinutes,
 } from './dates.js';
 import { newId } from './model.js';
-import { weekdayPosition } from './recurrence.js';
+import { weekdayPosition, nthWeekday, occurrences } from './recurrence.js';
 import { serializeICS } from './ics.js';
 import * as f from './format.js';
 import { h, icon, openSheet, choose, saveFile, slug } from './ui.js';
@@ -72,6 +72,7 @@ export function openEditor(ctx, { occurrence, draft }) {
   for (const b of weekdayButtons) {
     b.addEventListener('click', () => {
       b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+      ruleEdited = true;
       changed();
     });
   }
@@ -135,6 +136,9 @@ export function openEditor(ctx, { occurrence, draft }) {
 
   // ---- behaviour
   let duration = diffMinutes(parseWhen(values().start), parseWhen(values().end));
+  // Whether the repeat settings themselves were changed. Moving one occurrence can
+  // alter the rule they produce ("the second Wednesday") without anyone editing it.
+  let ruleEdited = false;
 
   function field(label, ...controls) {
     return h('div', { class: 'field' }, h('span', { class: 'field-label' }, label), h('span', { class: 'field-controls' }, controls));
@@ -248,6 +252,12 @@ export function openEditor(ctx, { occurrence, draft }) {
   // Moving the start drags the end along, keeping the duration.
   let lastStartDate = startDate.value;
   startDate.addEventListener('change', () => {
+    // A lone toggle on the start's weekday means "the start's weekday", so it moves along.
+    const days = selectedDays();
+    if (lastStartDate && startDate.value && days.length === 1 && days[0] === parseDate(lastStartDate).getUTCDay()) {
+      const day = parseDate(startDate.value).getUTCDay();
+      for (const b of weekdayButtons) b.setAttribute('aria-pressed', String(Number(b.dataset.day) === day));
+    }
     if (allDay.checked && lastStartDate && endDate.value) {
       const span = diffDays(parseDate(lastStartDate), parseDate(endDate.value));
       if (startDate.value) endDate.value = dateKey(addDays(parseDate(startDate.value), Math.max(0, span)));
@@ -266,10 +276,14 @@ export function openEditor(ctx, { occurrence, draft }) {
     if (!allDay.checked) {
       duration = ctx.settings.defaultDuration;
       shiftEnd();
+    } else if (endTime.value === '00:00' && endDate.value > startDate.value) {
+      // Ending at midnight, the event never reaches that last day.
+      endDate.value = dateKey(addDays(parseDate(endDate.value), -1));
     }
     changed();
   });
   repeat.addEventListener('change', () => {
+    ruleEdited = true;
     if (repeat.value === 'custom') {
       // Seed the custom panel from the start date.
       const start = parseDate(startDate.value);
@@ -280,6 +294,7 @@ export function openEditor(ctx, { occurrence, draft }) {
   for (const el of [every, unit, monthMode, endMode, untilDate, count, calendar]) {
     el.addEventListener('change', changed);
     el.addEventListener('input', changed);
+    if (el !== calendar) el.addEventListener('input', () => { ruleEdited = true; });
   }
   for (const input of [title, location]) {
     input.addEventListener('keydown', (e) => {
@@ -298,17 +313,20 @@ export function openEditor(ctx, { occurrence, draft }) {
     if (valid()) return refresh();
     const v = values();
     const now = new Date().toISOString();
+    // Saving into a hidden calendar shows it, or the event would seem to vanish.
+    const cal = ctx.calendar(v.calendarId);
+    const reveal = cal && !cal.visible ? { putCalendars: [{ ...cal, visible: true }] } : {};
     if (isNew) {
-      await ctx.commit({ putEvents: [{ ...draft, ...v, updated: now }] });
+      await ctx.commit({ putEvents: [{ ...draft, ...v, updated: now }], ...reveal });
       return sheet.close(true);
     }
     if (JSON.stringify(v) === initial) return sheet.close(true);
     if (!series.rrule) {
-      await ctx.commit({ putEvents: [{ ...series, ...v, updated: now }] });
+      await ctx.commit({ putEvents: [{ ...series, ...v, updated: now }], ...reveal });
       return sheet.close(true);
     }
 
-    const ruleChanged = JSON.stringify(v.rrule) !== JSON.stringify(JSON.parse(initial).rrule);
+    const ruleChanged = ruleEdited && JSON.stringify(v.rrule) !== JSON.stringify(JSON.parse(initial).rrule);
     const scope = ruleChanged ? 'all' : await choose({
       title: 'This is a repeating event.',
       options: [
@@ -324,7 +342,7 @@ export function openEditor(ctx, { occurrence, draft }) {
         rrule: null, exdates: [], created: now, updated: now,
       };
       const rest = { ...series, exdates: [...new Set([...series.exdates, occurrence.date])].sort(), updated: now };
-      await ctx.commit({ putEvents: [rest, single] });
+      await ctx.commit({ putEvents: [rest, single], ...reveal });
     } else {
       // Apply the edit to the whole series, shifted by however far this occurrence moved.
       const moved = parseWhen(v.start) - occurrence.start;
@@ -338,9 +356,16 @@ export function openEditor(ctx, { occurrence, draft }) {
           ...series, ...v,
           start: key(seriesStart),
           end: key(seriesEnd),
-          exdates: series.exdates.map((d) => dateKey(addDays(parseDate(d), days))),
+          exdates: series.exdates.map((d) => {
+            const shifted = addDays(parseDate(d), days);
+            // "The second Tuesday" moved to Wednesdays isn't the same number of days away every month.
+            const bw = v.rrule?.byWeekday;
+            const day = bw && nthWeekday(shifted.getUTCFullYear(), shifted.getUTCMonth(), bw.day, bw.nth);
+            return day ? dateKey(new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), day))) : dateKey(shifted);
+          }),
           updated: now,
         }],
+        ...reveal,
       });
     }
     sheet.close(true);
@@ -371,11 +396,18 @@ export function openEditor(ctx, { occurrence, draft }) {
     }
     const { count: _drop, ...rule } = series.rrule;
     rule.until = dateKey(addDays(parseDate(occurrence.date), -1));
-    return ctx.commit({ putEvents: [{ ...series, rrule: rule, updated: now }] }, { message: 'Deleted future events', undo: true });
+    const kept = { ...series, rrule: rule, updated: now };
+    // If every earlier occurrence was already deleted, nothing is left: drop the series.
+    if (!occurrences(kept, parseWhen(series.start), parseDate(occurrence.date)).length) {
+      return ctx.commit({ deleteEvents: [series.id] }, { message: `Deleted “${label}”`, undo: true });
+    }
+    return ctx.commit({ putEvents: [kept] }, { message: 'Deleted future events', undo: true });
   }
 
   async function share() {
-    const ev = { ...series, ...values() };
+    // A repeating event goes whole, from its first date, so its count and exceptions still line up.
+    const when = series.rrule ? { allDay: series.allDay, start: series.start, end: series.end, rrule: series.rrule } : {};
+    const ev = { ...series, ...values(), ...when };
     const text = serializeICS([ev], { color: ctx.calendar(ev.calendarId)?.color });
     await saveFile(`${slug(ev.title || 'event')}.ics`, text, 'text/calendar');
   }

@@ -133,3 +133,33 @@ test('export writes monthly and yearly weekday rules', () => {
   assert.match(text, /DTEND;VALUE=DATE:20261127\r\n/);
   assert.match(text, /DTSTAMP:20261030T120000Z\r\n/);
 });
+
+test('UIDs with commas survive a round trip', () => {
+  const ev = {
+    id: 'a', uid: 'abc,def;1@example.com', title: 'x', location: '', notes: '', allDay: true,
+    start: '2026-11-02', end: '2026-11-02', rrule: null, exdates: [],
+  };
+  const [back] = parseICS(serializeICS([ev])).events;
+  assert.equal(back.uid, 'abc,def;1@example.com');
+});
+
+test('an all-day series ending at midnight UTC keeps its last day west of UTC', () => {
+  const ics = [
+    'BEGIN:VCALENDAR', 'BEGIN:VEVENT', 'UID:x',
+    'DTSTART;VALUE=DATE:20261101', 'DTEND;VALUE=DATE:20261102',
+    'RRULE:FREQ=DAILY;UNTIL=20261105T000000Z',
+    'END:VEVENT', 'END:VCALENDAR',
+  ].join('\r\n');
+  assert.equal(parseICS(ics, { timeZone: 'America/Los_Angeles' }).events[0].rrule.until, '2026-11-05');
+});
+
+test('an unreadable BYDAY keeps the rule on the start day instead of emptying it', () => {
+  const ics = [
+    'BEGIN:VCALENDAR', 'BEGIN:VEVENT', 'UID:x',
+    'DTSTART:20261102T090000', 'RRULE:FREQ=WEEKLY;BYDAY=XX',
+    'END:VEVENT', 'END:VCALENDAR',
+  ].join('\r\n');
+  const { events, warnings } = parseICS(ics);
+  assert.deepEqual(events[0].rrule, { freq: 'weekly', interval: 1 });
+  assert.equal(warnings.length, 1);
+});

@@ -72,14 +72,15 @@ function calendarsGroup(ctx) {
           title: 'Delete calendar',
           disabled: ctx.calendars.length === 1,
           onClick: async () => {
+            const { name: label } = ctx.calendar(cal.id) ?? cal; // a rename doesn't redraw this row
             const ok = await choose({
-              title: `Delete “${cal.name}”?`,
+              title: `Delete “${label}”?`,
               message: count ? `Its ${count} ${count === 1 ? 'event' : 'events'} will be deleted too.` : undefined,
               options: [{ label: 'Delete calendar', value: true, destructive: true }],
             });
             if (!ok) return;
             const events = ctx.events.filter((e) => e.calendarId === cal.id).map((e) => e.id);
-            await ctx.commit({ deleteCalendars: [cal.id], deleteEvents: events }, { message: `Deleted “${cal.name}”`, undo: true });
+            await ctx.commit({ deleteCalendars: [cal.id], deleteEvents: events }, { message: `Deleted “${label}”`, undo: true });
           },
         }, icon('trash'))),
       palette);

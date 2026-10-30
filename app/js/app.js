@@ -191,7 +191,7 @@ async function markBackedUp() {
 }
 
 async function eraseAll() {
-  await state.store.write({ clear: true, settings: defaultSettings(navigator.language) });
+  await state.store.write({ clear: true, settings: defaultSettings(navigator.language), lastBackup: null });
   await closeSheet(true);
   ctx.query = '';
   await load();
@@ -448,14 +448,13 @@ function registerServiceWorker() {
       },
     });
   };
+  const watch = (worker) => worker?.addEventListener('statechange', () => {
+    if (worker.state === 'installed' && navigator.serviceWorker.controller) offer(worker);
+  });
   navigator.serviceWorker.register('./sw.js').then((reg) => {
     if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
-    reg.addEventListener('updatefound', () => {
-      const worker = reg.installing;
-      worker?.addEventListener('statechange', () => {
-        if (worker.state === 'installed' && navigator.serviceWorker.controller) offer(worker);
-      });
-    });
+    watch(reg.installing); // an update may already be on its way
+    reg.addEventListener('updatefound', () => watch(reg.installing));
   }).catch((err) => console.warn('Offline support unavailable:', err));
 }
 
