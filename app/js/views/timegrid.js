@@ -1,7 +1,8 @@
 import { addDays, addMinutes, startOfDay, startOfWeek, dateKey, todayKey, nowWall, minuteOfDay } from '../dates.js';
 import * as f from '../format.js';
 import { h } from '../ui.js';
-import { bucketByDay, chip, isAllDayLike } from './common.js';
+import { bucketByDay, chip, isAllDayLike, dropDay } from './common.js';
+import { makeDraggable } from './drag.js';
 
 const MIN_BLOCK_MINUTES = 22; // shortest an event is drawn, so its title fits
 
@@ -45,7 +46,7 @@ export function renderTimeGrid(ctx, days) {
   if (allDay.size) {
     root.append(h('div', { class: 'tg-allday' },
       h('span', { class: 'tg-gutter-label' }, 'all-day'),
-      columns.map((d) => h('div', { class: 'tg-allday-col' }, (allDay.get(dateKey(d)) ?? []).map((o) => chip(ctx, o, d))))));
+      columns.map((d) => h('div', { class: 'tg-allday-col', ...dropDay(ctx, d) }, (allDay.get(dateKey(d)) ?? []).map((o) => chip(ctx, o, d))))));
   }
 
   const body = h('div', { class: 'tg-body' },
@@ -56,6 +57,20 @@ export function renderTimeGrid(ctx, days) {
   const scroller = h('div', { class: 'tg-scroll' }, body);
   scroller.addEventListener('scroll', () => { ctx.gridScroll = scroller.scrollTop; }, { passive: true });
   root.append(scroller);
+
+  const columnEls = [...body.querySelectorAll('.tg-col')];
+  columnEls.forEach((col, i) => {
+    for (const block of col.querySelectorAll('.tg-event')) {
+      makeDraggable(block, block.occurrence, i, {
+        hour,
+        columns: columnEls,
+        days: columns,
+        scroller,
+        drop: (start, end) => ctx.moveOccurrence(block.occurrence, start, end),
+        cancel: () => ctx.refresh(),
+      });
+    }
+  });
 
   root.mounted = () => {
     if (ctx.gridScroll != null) {
@@ -93,7 +108,7 @@ function dayColumn(ctx, day, occs, isToday, hour) {
   for (const s of segments) {
     const { o } = s;
     const short = s.drawnBottom - s.top < 45;
-    col.append(h('button', {
+    const block = h('button', {
       type: 'button',
       class: `tg-event${short ? ' short' : ''}`,
       style: {
@@ -107,7 +122,9 @@ function dayColumn(ctx, day, occs, isToday, hour) {
     },
     h('span', { class: 'tg-event-title' }, o.event.title || 'New event'),
     h('span', { class: 'tg-event-time' }, `${f.time(o.start)} – ${f.time(o.end)}`),
-    o.event.location && !short ? h('span', { class: 'tg-event-sub' }, o.event.location) : null));
+    o.event.location && !short ? h('span', { class: 'tg-event-sub' }, o.event.location) : null);
+    block.occurrence = o;
+    col.append(block);
   }
 
   if (isToday) col.append(h('div', { class: 'now-line', style: { '--m': minuteOfDay(nowWall()) } }));

@@ -3,11 +3,11 @@
 import {
   addDays, addMinutes, parseDate, parseWhen, dateKey, timeKey, diffDays, diffMinutes,
 } from './dates.js';
-import { newId } from './model.js';
-import { weekdayPosition, nthWeekday, occurrences } from './recurrence.js';
+import { weekdayPosition, occurrences, eventSpan } from './recurrence.js';
 import { serializeICS } from './ics.js';
 import * as f from './format.js';
 import { h, icon, openSheet, choose, saveFile, slug } from './ui.js';
+import { chooseScope, occurrenceChange } from './edits.js';
 
 const PRESETS = {
   never: null,
@@ -115,6 +115,7 @@ export function openEditor(ctx, { occurrence, draft }) {
       endRow),
     h('div', { class: 'group' }, h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Calendar'), h('span', { class: 'field-controls' }, calendarDot, calendar))),
     h('div', { class: 'group' }, h('div', { class: 'field' }, notes)),
+    isNew ? templatePicker(ctx, useTemplate) : null,
     isNew ? null : h('div', { class: 'group actions' },
       h('button', { type: 'button', class: 'action-row', onClick: share }, icon('share'), 'Send as file'),
       h('button', { type: 'button', class: 'action-row destructive', onClick: remove }, icon('trash'), 'Delete event')),
@@ -237,6 +238,27 @@ export function openEditor(ctx, { occurrence, draft }) {
     refresh();
   }
 
+  /** Fills the form from a repeating event, on the date already chosen. */
+  function useTemplate(t) {
+    title.value = t.title;
+    location.value = t.location;
+    notes.value = t.notes;
+    calendar.value = t.calendarId;
+    allDay.checked = t.allDay;
+    repeat.value = 'never';
+    const span = eventSpan(t);
+    if (t.allDay) {
+      endDate.value = dateKey(addDays(parseDate(startDate.value), diffDays(span.start, span.end) - 1));
+    } else {
+      startTime.value = timeKey(span.start);
+      duration = diffMinutes(span.start, span.end);
+      shiftEnd();
+    }
+    lastStartDate = startDate.value;
+    changed();
+    body.closest('.sheet-body')?.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   function shiftEnd() {
     if (!startDate.value) return;
     if (allDay.checked) {
@@ -327,47 +349,9 @@ export function openEditor(ctx, { occurrence, draft }) {
     }
 
     const ruleChanged = ruleEdited && JSON.stringify(v.rrule) !== JSON.stringify(JSON.parse(initial).rrule);
-    const scope = ruleChanged ? 'all' : await choose({
-      title: 'This is a repeating event.',
-      options: [
-        { label: 'Save for this event only', value: 'one' },
-        { label: 'Save for all events', value: 'all' },
-      ],
-    });
+    const scope = ruleChanged ? 'all' : await chooseScope();
     if (!scope) return;
-
-    if (scope === 'one') {
-      const single = {
-        ...series, ...v, id: newId(), uid: `${series.uid}/${occurrence.date}`,
-        rrule: null, exdates: [], created: now, updated: now,
-      };
-      const rest = { ...series, exdates: [...new Set([...series.exdates, occurrence.date])].sort(), updated: now };
-      await ctx.commit({ putEvents: [rest, single], ...reveal });
-    } else {
-      // Apply the edit to the whole series, shifted by however far this occurrence moved.
-      const moved = parseWhen(v.start) - occurrence.start;
-      const days = diffDays(occurrence.start, parseWhen(v.start));
-      const seriesStart = new Date(parseWhen(series.start).getTime() + moved);
-      const length = parseWhen(v.end) - parseWhen(v.start);
-      const seriesEnd = new Date(seriesStart.getTime() + length);
-      const key = (d) => (v.allDay ? dateKey(d) : `${dateKey(d)}T${timeKey(d)}`);
-      await ctx.commit({
-        putEvents: [{
-          ...series, ...v,
-          start: key(seriesStart),
-          end: key(seriesEnd),
-          exdates: series.exdates.map((d) => {
-            const shifted = addDays(parseDate(d), days);
-            // "The second Tuesday" moved to Wednesdays isn't the same number of days away every month.
-            const bw = v.rrule?.byWeekday;
-            const day = bw && nthWeekday(shifted.getUTCFullYear(), shifted.getUTCMonth(), bw.day, bw.nth);
-            return day ? dateKey(new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), day))) : dateKey(shifted);
-          }),
-          updated: now,
-        }],
-        ...reveal,
-      });
-    }
+    await ctx.commit({ ...occurrenceChange({ series, occurrence, values: v, scope, now }), ...reveal });
     sheet.close(true);
   }
 
@@ -411,4 +395,39 @@ export function openEditor(ctx, { occurrence, draft }) {
     const text = serializeICS([ev], { color: ctx.calendar(ev.calendarId)?.color });
     await saveFile(`${slug(ev.title || 'event')}.ics`, text, 'text/calendar');
   }
+}
+
+/**
+ * New events can start from a repeating one: its title, place, notes, calendar
+ * and times, on the date being added. Only events saved as repeating are
+ * offered, and only here: nothing is guessed from what you type.
+ */
+function templatePicker(ctx, use) {
+  const seen = new Set();
+  const templates = ctx.events
+    .filter((e) => e.rrule)
+    .sort((a, b) => a.title.localeCompare(b.title) || b.updated.localeCompare(a.updated))
+    .filter((e) => {
+      const key = `${e.title.trim().toLowerCase()}|${e.calendarId}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  if (!templates.length) return null;
+
+  return h('section', { class: 'templates' },
+    h('h3', { class: 'group-title' }, 'Start from a repeating event'),
+    h('div', { class: 'group' }, templates.map((t) => {
+      const { start, end } = eventSpan(t);
+      const when = t.allDay ? 'all-day' : `${f.time(start)} – ${f.time(end)}`;
+      const preset = presetOf(t.rrule);
+      const how = preset !== 'custom' ? PRESET_LABELS[preset]
+        : t.rrule.byDay ? `Every ${t.rrule.interval > 1 ? `${t.rrule.interval} weeks` : 'week'} on ${t.rrule.byDay.map((d) => f.weekdayShort(addDays(parseDate('2026-01-04'), d))).join(', ')}`
+        : 'Repeats';
+      return h('button', { type: 'button', class: 'action-row template-row', onClick: () => use(t) },
+        h('span', { class: 'cal-dot', style: { '--c': ctx.calendar(t.calendarId)?.color ?? 'transparent' } }),
+        h('span', { class: 'action-text' },
+          t.title || 'New event',
+          h('span', { class: 'action-sub' }, [how, when, t.location].filter(Boolean).join(' · '))));
+    })));
 }

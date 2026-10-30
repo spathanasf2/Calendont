@@ -3,10 +3,12 @@
 
 const locale = () => (typeof navigator !== 'undefined' && navigator.language) || 'en-US';
 let hour12; // undefined lets the locale decide
+let localeHour12; // what the locale decided, once asked
 const cache = new Map();
 
 export function setTimeFormat(pref) {
   hour12 = pref === '12' ? true : pref === '24' ? false : undefined;
+  localeHour12 = undefined;
   cache.clear();
 }
 
@@ -55,7 +57,8 @@ export function hourLabel(h) {
 
 export function uses12h() {
   if (hour12 !== undefined) return hour12;
-  return fmt({ hour: 'numeric' }).resolvedOptions().hour12 ?? false;
+  localeHour12 ??= fmt({ hour: 'numeric' }).resolvedOptions().hour12 ?? false;
+  return localeHour12;
 }
 
 /** "3 days ago", "just now". */

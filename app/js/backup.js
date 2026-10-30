@@ -68,3 +68,23 @@ export function readBackup(text, locale) {
     skipped,
   };
 }
+
+const DAY_MS = 86_400_000;
+
+/**
+ * Whether to nudge for a backup: there are changes no backup holds, and they
+ * have waited a while (30 days since the last backup, or 14 days since first
+ * use when there has never been one).
+ */
+export function backupDue(events, lastBackup, now = Date.now()) {
+  if (!events.length) return false;
+  const last = lastBackup ? Date.parse(lastBackup) : null;
+  let newest = 0;
+  let oldest = now;
+  for (const e of events) {
+    newest = Math.max(newest, Date.parse(e.updated) || 0);
+    oldest = Math.min(oldest, Date.parse(e.created) || now);
+  }
+  if (last && newest <= last) return false;
+  return now - (last ?? oldest) > (last ? 30 : 14) * DAY_MS;
+}

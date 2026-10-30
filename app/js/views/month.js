@@ -1,9 +1,9 @@
 import { addDays, addMonths, startOfMonth, startOfWeek, dateKey, todayKey, parseDate } from '../dates.js';
 import * as f from '../format.js';
 import { h } from '../ui.js';
-import { bucketByDay, chip, eventRow, emptyNote } from './common.js';
+import { bucketByDay, chip, eventRow, emptyNote, dropDay } from './common.js';
 
-const AROUND = 3; // months rendered either side of the one in view
+const AROUND = 2; // months rendered either side of the one in view
 const ROWS = 6; // weeks visible at once
 
 /**
@@ -130,6 +130,7 @@ function dayCell(ctx, day, occs, { outside, today, selected, compact, maxChips }
       else ctx.select(day);
     },
     onDblclick: () => ctx.newEvent({ day }),
+    ...dropDay(ctx, day),
     onKeydown: (e) => {
       if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
       e.preventDefault();

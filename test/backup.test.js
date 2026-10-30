@@ -54,3 +54,15 @@ test('drops broken entries and rehomes orphaned events', () => {
   assert.equal(restored.events[0].calendarId, restored.calendars[0].id);
   assert.equal(restored.events[0].end, restored.events[0].start, 'an end before the start is clamped');
 });
+
+test('a backup is due only for changes that have waited', async () => {
+  const { backupDue } = await import('../app/js/backup.js');
+  const now = Date.parse('2026-10-30T12:00:00Z');
+  const ev = (created, updated = created) => ({ created, updated });
+  assert.equal(backupDue([], null, now), false, 'nothing to lose');
+  assert.equal(backupDue([ev('2026-10-25T00:00:00Z')], null, now), false, 'first week of use');
+  assert.equal(backupDue([ev('2026-10-01T00:00:00Z')], null, now), true, 'never backed up after two weeks');
+  assert.equal(backupDue([ev('2026-08-01T00:00:00Z')], '2026-09-01T00:00:00Z', now), false, 'no changes since the backup');
+  assert.equal(backupDue([ev('2026-08-01T00:00:00Z', '2026-10-20T00:00:00Z')], '2026-10-10T00:00:00Z', now), false, 'changes, but backup is recent');
+  assert.equal(backupDue([ev('2026-08-01T00:00:00Z', '2026-10-20T00:00:00Z')], '2026-09-01T00:00:00Z', now), true, 'changes and an old backup');
+});

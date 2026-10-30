@@ -114,9 +114,11 @@ function backupGroup(ctx) {
     h('button', { type: 'button', class: 'action-row', onClick: () => exportICS(ctx) },
       icon('share'),
       h('span', { class: 'action-text' }, 'Export all as .ics', h('span', { class: 'action-sub' }, 'For Apple Calendar, Google Calendar or Outlook'))),
-  ], ctx.persistent
-    ? 'Your calendar lives only on this device. A backup is one small file with everything in it — keep a copy somewhere safe.'
-    : 'This browser isn’t letting Calendont save anything (private browsing?). Changes will be lost when you close it — back up before you go.');
+  ], !ctx.persistent
+    ? 'This browser isn’t letting Calendont save anything (private browsing?). Changes will be lost when you close it — back up before you go.'
+    : `Your calendar lives only on this device${ctx.persisted
+      ? ', and the browser has agreed not to clear it on its own'
+      : ', and the browser may clear it if storage runs low'}. A backup is one small file with everything in it — keep a copy somewhere safe.`);
 }
 
 function preferencesGroup(ctx) {

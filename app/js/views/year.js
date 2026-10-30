@@ -8,7 +8,7 @@ export function renderYear(ctx) {
   const year = ctx.cursor.getUTCFullYear();
   const from = new Date(Date.UTC(year, 0, 1));
   const to = new Date(Date.UTC(year + 1, 0, 1));
-  const busy = bucketByDay(ctx.expand(from, to), from, to);
+  const busy = bucketByDay(ctx.expand(from, to, { sort: false }), from, to);
   const today = todayKey();
   const ws = ctx.settings.weekStart;
   const thisMonth = today.slice(0, 7);

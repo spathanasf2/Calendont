@@ -5,7 +5,7 @@ import {
   nowWall, todayKey, minuteOfDay,
 } from './dates.js';
 import { cleanCalendar, cleanEvent, cleanSettings, defaultSettings, draftEvent, newId, SKINS } from './model.js';
-import { occurrences } from './recurrence.js';
+import { occurrences, eventSpan } from './recurrence.js';
 import { openStore, requestPersistence } from './store.js';
 import * as f from './format.js';
 import { toast, sheetOpen, closeSheet } from './ui.js';
@@ -16,6 +16,8 @@ import { renderYear } from './views/year.js';
 import { openEditor } from './editor.js';
 import { openSettings } from './settings.js';
 import { importFile } from './transfer.js';
+import { updateBanner } from './banner.js';
+import { moveOccurrence } from './edits.js';
 
 const $ = (sel) => document.querySelector(sel);
 const compactQuery = matchMedia('(max-width: 720px)');
@@ -40,6 +42,7 @@ const state = {
   today: todayKey(),
   previous: null, // what "Replace everything" replaced, for its undo
   askedPersistence: false,
+  persisted: false, // whether the browser promised not to evict our storage
 };
 
 /** Everything the views and sheets may read or do. */
@@ -49,6 +52,7 @@ const ctx = {
   get events() { return state.events; },
   get lastBackup() { return state.lastBackup; },
   get persistent() { return state.store.persistent; },
+  get persisted() { return state.persisted; },
   get cursor() { return state.cursor; },
   get view() { return state.view; },
   get compact() { return compactQuery.matches; },
@@ -56,6 +60,7 @@ const ctx = {
   // View-local memory that survives re-renders.
   query: '',
   listDays: 90,
+  listRows: 300,
   gridScroll: null,
   onDataChange: null,
 
@@ -66,6 +71,8 @@ const ctx = {
   showMonth,
   newEvent,
   openOccurrence: (occurrence) => openEditor(ctx, { occurrence }),
+  moveOccurrence: (occurrence, start, end) => moveOccurrence(ctx, occurrence, start, end),
+  refresh: () => render(),
   commit,
   saveSettings,
   replaceAll,
@@ -77,20 +84,70 @@ const ctx = {
 // ---------------------------------------------------------------------------
 // Data
 
-/** Occurrences of visible events overlapping [from, to), in display order. */
-function expand(from, to) {
-  const visible = new Map(state.calendars.filter((c) => c.visible).map((c) => [c.id, c]));
-  const out = [];
+// One-off events sorted by start, rebuilt whenever the event list changes, so a
+// view only looks at events near the dates it shows. Very long events and
+// repeating ones are few, and are checked every time.
+let index = null;
+const LONG_MS = 31 * 86_400_000;
+const collator = new Intl.Collator();
+
+function eventIndex() {
+  if (index?.source === state.events) return index;
+  const singles = [];
+  const long = [];
+  const repeating = [];
   for (const event of state.events) {
+    if (event.rrule) {
+      repeating.push(event);
+      continue;
+    }
+    const { start, end } = eventSpan(event);
+    (end - start > LONG_MS ? long : singles).push({ event, start: +start, end: +end });
+  }
+  singles.sort((a, b) => a.start - b.start);
+  const longest = singles.reduce((m, s) => Math.max(m, s.end - s.start), 0);
+  index = { source: state.events, singles, long, repeating, longest };
+  return index;
+}
+
+/**
+ * Occurrences of visible events overlapping [from, to), in display order.
+ * `match` filters events before expanding them; `sort: false` skips ordering.
+ */
+function expand(from, to, { match, sort = true } = {}) {
+  const visible = new Map(state.calendars.filter((c) => c.visible).map((c) => [c.id, c]));
+  const { singles, long, repeating, longest } = eventIndex();
+  const out = [];
+  const lo = +from;
+  const hi = +to;
+  const single = ({ event, start, end }) => {
     const calendar = visible.get(event.calendarId);
-    if (!calendar) continue;
+    if (!calendar || (match && !match(event))) return;
+    if (start >= hi || (end === start ? start < lo : end <= lo)) return;
+    const s = new Date(start);
+    out.push({ start: s, end: new Date(end), date: dateKey(s), event, calendar, allDay: event.allDay });
+  };
+  // First one-off that could reach into the range: none starts earlier than the longest one lasts.
+  let i = 0;
+  let j = singles.length;
+  while (i < j) {
+    const mid = (i + j) >> 1;
+    if (singles[mid].start < lo - longest) i = mid + 1;
+    else j = mid;
+  }
+  for (; i < singles.length && singles[i].start < hi; i++) single(singles[i]);
+  long.forEach(single);
+  for (const event of repeating) {
+    const calendar = visible.get(event.calendarId);
+    if (!calendar || (match && !match(event))) continue;
     for (const o of occurrences(event, from, to)) out.push({ ...o, event, calendar, allDay: event.allDay });
   }
+  if (!sort) return out;
   return out.sort((a, b) =>
     (b.allDay - a.allDay)
     || (a.start - b.start)
     || ((b.end - b.start) - (a.end - a.start))
-    || a.event.title.localeCompare(b.event.title));
+    || collator.compare(a.event.title, b.event.title));
 }
 
 const byOrder = (a, b) => a.order - b.order || a.name.localeCompare(b.name);
@@ -159,8 +216,9 @@ async function commit(change, { message, undo = false, quiet = false } = {}) {
   channel?.postMessage('changed');
   if (!state.askedPersistence) {
     state.askedPersistence = true;
-    requestPersistence();
+    requestPersistence().then((granted) => { state.persisted = granted; });
   }
+  updateBanner(ctx);
   if (message) toast(message, undo ? { actionLabel: 'Undo', onAction: () => commit(inverse) } : {});
 }
 
@@ -181,6 +239,7 @@ async function replaceAll(data, { keepPrevious = false } = {}) {
   await load();
   render();
   ctx.onDataChange?.();
+  updateBanner(ctx);
   channel?.postMessage('changed');
 }
 
@@ -188,6 +247,7 @@ async function markBackedUp() {
   state.lastBackup = new Date().toISOString();
   await state.store.write({ lastBackup: state.lastBackup });
   ctx.onDataChange?.();
+  updateBanner(ctx);
 }
 
 async function eraseAll() {
@@ -196,6 +256,7 @@ async function eraseAll() {
   ctx.query = '';
   await load();
   render();
+  updateBanner(ctx);
   channel?.postMessage('changed');
   toast('All data erased');
 }
@@ -415,6 +476,7 @@ function bindChrome() {
     await load();
     render();
     ctx.onDataChange?.();
+    updateBanner(ctx);
   });
 }
 
@@ -464,7 +526,9 @@ async function init() {
   state.view = state.settings.view;
   bindChrome();
   render();
+  updateBanner(ctx);
   document.body.classList.add('ready');
+  navigator.storage?.persisted?.().then((v) => { state.persisted = v; }).catch(() => {});
   if (!state.store.persistent) toast('This browser won’t let Calendont save. Changes last until you close it.', { timeout: 8000 });
   registerServiceWorker();
 }

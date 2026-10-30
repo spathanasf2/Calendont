@@ -1,4 +1,4 @@
-import { addDays, startOfDay, dateKey, DAY_MS } from '../dates.js';
+import { addDays, startOfDay, dateKey, diffDays, DAY_MS } from '../dates.js';
 import * as f from '../format.js';
 import { h } from '../ui.js';
 
@@ -23,6 +23,36 @@ export const isAllDayLike = (o) => o.allDay || o.end - o.start >= DAY_MS;
 
 const colorStyle = (o) => ({ '--c': o.calendar.color });
 
+// Chips can be dragged to another day with a mouse; phones get the editor instead.
+let dragged = null; // { o, from } while a chip is in flight
+const finePointer = matchMedia('(pointer: fine)');
+const clearTargets = () => document.querySelectorAll('.drop-target').forEach((el) => el.classList.remove('drop-target'));
+
+/** Event handlers that make an element accept a chip dropped onto `day`. */
+export function dropDay(ctx, day) {
+  return {
+    onDragover: (e) => {
+      if (!dragged) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      e.currentTarget.classList.add('drop-target');
+    },
+    onDragleave: (e) => {
+      if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drop-target');
+    },
+    onDrop: (e) => {
+      if (!dragged) return;
+      e.preventDefault();
+      e.stopPropagation();
+      clearTargets();
+      const { o, from } = dragged;
+      dragged = null;
+      const days = diffDays(from, day);
+      if (days) ctx.moveOccurrence(o, addDays(o.start, days), addDays(o.end, days));
+    },
+  };
+}
+
 /** A compact event label for month cells and the all-day lane. */
 export function chip(ctx, o, day) {
   const startsHere = dateKey(o.start) === dateKey(day);
@@ -32,6 +62,16 @@ export function chip(ctx, o, day) {
     class: `chip${timed ? ' timed' : ' allday'}`,
     style: colorStyle(o),
     title: o.event.title || 'New event',
+    draggable: finePointer.matches ? 'true' : null,
+    onDragstart: (e) => {
+      dragged = { o, from: day };
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', o.event.title || 'New event');
+    },
+    onDragend: () => {
+      dragged = null;
+      clearTargets();
+    },
     onClick: (e) => {
       e.stopPropagation();
       ctx.openOccurrence(o);

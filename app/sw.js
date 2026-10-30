@@ -4,7 +4,7 @@
 // tells browsers there is an update.
 
 // <stamp>
-const VERSION = 'dee2d8875e88';
+const VERSION = '0d8ea10a6488';
 const ASSETS = [
   './css/app.css',
   './css/themes.css',
@@ -19,8 +19,10 @@ const ASSETS = [
   './index.html',
   './js/app.js',
   './js/backup.js',
+  './js/banner.js',
   './js/dates.js',
   './js/editor.js',
+  './js/edits.js',
   './js/format.js',
   './js/ics.js',
   './js/model.js',
@@ -30,6 +32,7 @@ const ASSETS = [
   './js/transfer.js',
   './js/ui.js',
   './js/views/common.js',
+  './js/views/drag.js',
   './js/views/list.js',
   './js/views/month.js',
   './js/views/timegrid.js',
